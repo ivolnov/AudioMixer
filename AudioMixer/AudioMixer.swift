@@ -8,7 +8,7 @@
 
 protocol AudioMixer {
     func push(_ chunk: Chunk, channel id: Int)
-    var consumer: (Chunk) -> () { get set }
+    func subscribe(consumer: @escaping (Chunk) -> ())
 }
 
 struct Chunk {
@@ -25,10 +25,9 @@ class PcmMixer: AudioMixer {
         let chunkSize: UInt
     }
     
-    var consumer: (Chunk) -> () = { _ in }
-    
+    private var consumer: (Chunk) -> () = { _ in }
     private var resultTimeStamp: UInt
-    private var chunkSize: UInt
+    private let chunkSize: UInt
     
     private var queueLastIndexes: [Int] = []
     private var queues: [[UInt8]] = []
@@ -44,6 +43,10 @@ class PcmMixer: AudioMixer {
         queueLastIndexes = Array(repeating: 0, count: queues.count)
         resultTimeStamp = config.startTimeStamp
         chunkSize = config.chunkSize
+    }
+    
+    func subscribe(consumer: @escaping (Chunk) -> ()) {
+        self.consumer = consumer
     }
     
     func push(_ chunk: Chunk, channel id: Int) {
